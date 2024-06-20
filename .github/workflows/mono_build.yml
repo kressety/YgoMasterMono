@@ -31,14 +31,18 @@ jobs:
       run: |
         zip -r YgoMasterMonoServer.zip YgoMaster/Data YgoMaster/YgoMaster.exe
 
+    - name: Determine release tag
+      id: get_tag
+      run: echo "::set-output name=tag::$(echo $GITHUB_SHA | cut -c1-7)"
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.sha }}
-        release_name: Release ${{ github.sha }}
+        tag_name: ${{ steps.get_tag.outputs.tag }}
+        release_name: Release ${{ steps.get_tag.outputs.tag }}
         draft: false
         prerelease: false
 
