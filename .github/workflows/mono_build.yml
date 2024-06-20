@@ -1,0 +1,51 @@
+name: Build and Release YgoMasterMonoServer
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install Mono
+      run: |
+        sudo apt update
+        sudo apt install -y mono-complete zip jq
+
+    - name: Build with Mono
+      run: xbuild YgoMaster.sln /p:Configuration=Debug /p:Platform=x64
+
+    - name: Update Settings.json and ClientSettings.json
+      run: |
+        jq '.MultiplayerEnabled = true | .SessionServerIP = "0.0.0.0" | .MultiplayerPvpClientConnectIP = "localhost" | .BindIP = "http://*:{BasePort}/" | .BaseIP = "0.0.0.0"' YgoMaster/Data/Settings.json > YgoMaster/Data/Settings_tmp.json
+        mv YgoMaster/Data/Settings_tmp.json YgoMaster/Data/Settings.json
+
+    - name: Create release package
+      run: |
+        zip -r YgoMasterMonoServer.zip YgoMaster/Data YgoMaster/YgoMaster.exe
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.sha }}
+        release_name: Release ${{ github.sha }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./YgoMasterMonoServer.zip
+        asset_name: YgoMasterMonoServer.zip
+        asset_content_type: application/zip
