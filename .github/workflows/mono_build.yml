@@ -17,7 +17,8 @@ jobs:
     - name: Install Depandencies
       run: |
         sudo apt update
-        sudo apt install -y mono-complete zip jq
+        sudo apt install -y mono-complete zip jq python3-pip
+        pip3 install commentjson
 
     - name: Build with Mono
       run: xbuild YgoMaster.sln /p:Configuration=Debug /p:Platform=x64
